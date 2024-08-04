@@ -12,3 +12,4 @@ func LoadConfig() *Config {
 		DBConnectionString: "user=your_user password=your_password dbname=your_db sslmode=disable",
 	}
 }
+d
