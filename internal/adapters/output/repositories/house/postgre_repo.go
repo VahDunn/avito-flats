@@ -4,23 +4,18 @@ import (
 	"avito-flats/internal/domain/entities"
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
-	"sync"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
-// PostgresRepository реализация house.Repository с использованием PostgreSQL.
+// PostgresRepo реализация house.Repository с использованием PostgreSQL.
 type PostgresRepo struct {
 	db *sql.DB
 }
 
 // Убедимся, что PostgresRepo удовлетворяет интерфейсу house.Repository.
 var _ Repository = &PostgresRepo{}
-
-var (
-	NextHouseID entities.HouseID = entities.NextHouseID // Как привязать к бд?
-	mutex       sync.Mutex
-)
 
 // NewPostgresRepository создает новый репозиторий для работы с базой данных.
 func NewPostgresRepository(dataSourceName string) (*PostgresRepo, error) {
@@ -30,6 +25,7 @@ func NewPostgresRepository(dataSourceName string) (*PostgresRepo, error) {
 	}
 
 	if err = db.Ping(); err != nil {
+		db.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
@@ -38,52 +34,45 @@ func NewPostgresRepository(dataSourceName string) (*PostgresRepo, error) {
 
 // Close closes the database connection.
 func (r *PostgresRepo) Close() error {
-	if err := r.db.Close(); err != nil {
-		return fmt.Errorf("failed to close database connection: %w", err)
+	if r.db != nil {
+		return r.db.Close()
 	}
 	return nil
 }
 
-func (r *PostgresRepo) CreateHouse(address string, buildyear int64, developer string) (entities.House, error) {
-	// Переход к UTC и форматирование времени
-	now := time.Now().UTC().Format(time.RFC3339)
-
-	// Генерация уникального идентификатора HouseID
-	mutex.Lock()
-	houseId := entities.HouseID(NextHouseID)
-	NextHouseID++
-	mutex.Unlock()
+// CreateHouse creates a new house in the database.
+func (r *PostgresRepo) CreateHouse(address string, buildYear int64, developer string) (entities.House, error) {
+	now := time.Now().UTC()
 
 	// Начало транзакции
 	tx, err := r.db.Begin()
 	if err != nil {
 		return entities.House{}, fmt.Errorf("failed to begin transaction: %w", err)
 	}
+	defer tx.Rollback() // Откат транзакции в случае ошибки
 
-	// Вставка записи в базу данных.
+	var houseID int64
 	err = tx.QueryRow(`
-        INSERT INTO houses (id, address, build_year, developer, creation_date, last_flat_addition_date) 
-        VALUES ($1, $2, $3, $4, $5, $5) 
-        RETURNING id`).Scan(&houseId)
+        INSERT INTO houses (address, build_year, developer, creation_date, last_flat_addition_date) 
+        VALUES ($1, $2, $3, $4, $4) 
+        RETURNING id`, address, buildYear, developer, now).Scan(&houseID)
 	if err != nil {
-		tx.Rollback()
 		return entities.House{}, fmt.Errorf("failed to create house: %w", err)
 	}
 
 	// Подтверждение транзакции
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
 		return entities.House{}, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	// Создание сущности House.
 	house := entities.House{
-		ID:                   houseId,
+		ID:                   entities.HouseID(houseID),
 		Address:              address,
-		BuildYear:            buildyear,
+		BuildYear:            buildYear,
 		Developer:            &developer,
-		CreationDate:         now,
-		LastFlatAdditionDate: now,
+		CreationDate:         now.Format(time.RFC3339),
+		LastFlatAdditionDate: now.Format(time.RFC3339),
 	}
 
 	return house, nil

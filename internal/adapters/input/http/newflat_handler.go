@@ -42,7 +42,7 @@ func (n *NewFlatHandler) createNewFlat(w http.ResponseWriter, r *http.Request) {
 
 	temp_houseid, err := strconv.ParseInt(in.houseid, 10, 64)
 	if err != nil {
-		http.Error(w, "Что-то здесь не так", http.StatusInternalServerError)
+		http.Error(w, "House id error", http.StatusInternalServerError)
 	}
 	houseid := entities.HouseID(temp_houseid)
 

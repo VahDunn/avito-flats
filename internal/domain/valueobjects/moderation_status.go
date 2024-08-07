@@ -1,6 +1,6 @@
 package valueobjects
 
-type ModerationStatus int
+type ModerationStatus int64
 
 const (
 	Created ModerationStatus = iota

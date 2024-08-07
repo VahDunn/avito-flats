@@ -1,0 +1,46 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16.3
+    environment:
+      POSTGRES_DB: "avito-flats"
+      POSTGRES_USER: "avito-dev"
+      POSTGRES_PASSWORD: "pg4afl"
+    ports:
+      - "5432:5432"
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_USER=avito-dev
+      - DB_PASSWORD=pg4afl
+      - DB_NAME=avito-flats
+      - DB_PORT=5432
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=avito-dev
+      - POSTGRES_PASSWORD=pg4afl
+      - POSTGRES_DB=avito-flats
+
+volumes:
+  postgres_data:
+  dbHost := os.Getenv("DB_HOST")
+  dbUser := os.Getenv("DB_USER")
+  dbPassword := os.Getenv("DB_PASSWORD")
+  dbName := os.Getenv("DB_NAME")
+  dbPort := os.Getenv("DB_PORT")
+
+dataSourceName := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+  dbHost, dbUser, dbPassword, dbName, dbPort)
+
+dataSourceName := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+  dbHost, dbUser, dbPassword, dbName, dbPort)

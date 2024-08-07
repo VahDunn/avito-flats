@@ -39,7 +39,7 @@ func (h *HouseHandler) createNewHouse(w http.ResponseWriter, r *http.Request) {
 	}
 	buildyear, err := strconv.ParseInt(in.buildyear, 10, 64)
 	if err != nil {
-		http.Error(w, "Что-то здесь не так", http.StatusInternalServerError)
+		http.Error(w, "Error parsing buildyear", http.StatusInternalServerError)
 	}
 	newHouse, err := h.HouseUsecase.CreateHouse(in.address, buildyear, in.developer)
 	if err != nil {

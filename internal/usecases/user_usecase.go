@@ -11,6 +11,10 @@ type UserUsecase struct {
 	AuthService services.AuthService
 }
 
+type Token struct {
+	Token string `json:"token"`
+}
+
 func (u *UserUsecase) Register(email, password string, userType valueobjects.UserType) error {
 	// Логика регистрации
 	return nil
