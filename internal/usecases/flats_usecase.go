@@ -13,9 +13,9 @@ func NewFlatsUsecase(flats flats.Repository) FlatsUsecase {
 	return FlatsUsecase{flats: flats}
 }
 
-func (u *FlatsUsecase) GetFlatsByHouseID(houseID entities.HouseID) ([]entities.Flat, error) {
+func (f *FlatsUsecase) GetFlatsByHouseID(houseID entities.HouseID) ([]entities.Flat, error) {
 
-	flats, err := u.flats.GetFlatsByHouseID(houseID)
+	flats, err := f.flats.GetFlatsByHouseID(houseID)
 	if err != nil {
 		return nil, err
 	}

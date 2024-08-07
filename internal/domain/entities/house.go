@@ -10,3 +10,5 @@ type House struct {
 }
 
 type HouseID int64
+
+var NextHouseID HouseID = 1

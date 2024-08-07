@@ -3,10 +3,12 @@ package entities
 import "avito-flats/internal/domain/valueobjects"
 
 type Flat struct {
-	ID               int
-	HouseID          int
-	Number           int
-	Price            int
-	RoomCount        int
+	FlatID           int64
+	HouseID          HouseID
+	Number           int64
+	Price            int64
+	RoomCount        int64
 	ModerationStatus valueobjects.ModerationStatus
 }
+
+var NextFlatID int64 = 1

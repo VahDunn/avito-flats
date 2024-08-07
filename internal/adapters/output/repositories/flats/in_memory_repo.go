@@ -16,10 +16,10 @@ func (r *InMemoryRepo) GetFlatsByHouseID(houseID entities.HouseID) ([]entities.F
 
 	for i := range 5 {
 		flats = append(flats, entities.Flat{
-			ID:               i,
+			FlatID:           int64(i),
 			HouseID:          1,
-			Number:           i,
-			Price:            1000000 * (i),
+			Number:           int64(i),
+			Price:            int64(1000000 * (i)),
 			RoomCount:        2,
 			ModerationStatus: 0,
 		})
