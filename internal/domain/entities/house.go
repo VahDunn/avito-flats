@@ -1,7 +1,7 @@
 package entities
 
 type House struct {
-	ID                   HouseID
+	HouseID              HouseID
 	Address              string
 	BuildYear            int64
 	Developer            *string

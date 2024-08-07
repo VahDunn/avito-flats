@@ -1,4 +1,4 @@
-package house
+package subscribe
 
 import (
 	"avito-flats/internal/domain/entities"
@@ -7,9 +7,9 @@ import (
 
 type InMemoryRepo struct{}
 
-func (r *InMemoryRepo) CreateHouse(address string, buildyear int64, developer string) (entities.House, error) {
+func (r *InMemoryRepo) CreateHouse(address string, buildyear int64, developer string) (entities.HouseID, error) {
 	if address == "Потешная 3" {
-		return entities.House{}, fmt.Errorf("flat already exists")
+		return entities.HouseID{}, fmt.Errorf("flat already exists")
 	}
 
 	newHouse := entities.House{

@@ -2,12 +2,13 @@ package flatupdate
 
 import (
 	"avito-flats/internal/domain/entities"
+	"avito-flats/internal/domain/valueobjects"
 	"fmt"
 )
 
 type InMemoryRepo struct{}
 
-func (r *InMemoryRepo) UpdateFlatStatus(flatID int64) (entities.Flat, error) {
+func (r *InMemoryRepo) UpdateFlatStatus(flatID int64, status valueobjects.ModerationStatus) (entities.Flat, error) {
 	if flatID != 1 {
 		return entities.Flat{}, fmt.Errorf("house not found")
 	}

@@ -20,7 +20,7 @@ type UpdateFlatStatusIn struct {
 }
 
 // UpdateFlatStatusHandler конструктор для создания обработчика
-func NewUpdateFlatStatusHandler(usecase usecases.UpdateFlatStatusUsecase) UpdateFlatStatusHandler {
+func AnUpdateFlatStatusHandler(usecase usecases.UpdateFlatStatusUsecase) UpdateFlatStatusHandler {
 	return UpdateFlatStatusHandler{UpdateFlatStatusUsecase: usecase}
 }
 
