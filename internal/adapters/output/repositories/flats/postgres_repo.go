@@ -3,47 +3,52 @@ package flats
 import (
 	"avito-flats/internal/domain/entities"
 	"context"
-	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type PostgresRepo struct {
-	db *pgxpool.Pool
+	db Database
 }
 
 var _ Repository = &PostgresRepo{}
 
-func NewPostgresRepo(db *pgxpool.Pool) *PostgresRepo {
+func NewPostgresRepo(db Database) *PostgresRepo {
 	return &PostgresRepo{db: db}
 }
 
 // GetFlatsByHouseID возвращает список квартир по ID дома
-func (r *PostgresRepo) GetFlatsByHouseID(houseID entities.HouseID) ([]entities.Flat, error) {
-	query := `
-        SELECT id, house_id, flat_number, rooms, price, user_id
-        FROM flats
-        WHERE house_id = $1;
-    `
-
-	rows, err := r.db.Query(context.Background(), query, houseID)
+func (r *PostgresRepo) GetFlatsByHouseID(ctx context.Context, houseID entities.HouseID) ([]*entities.Flat, error) {
+	rows, err := r.db.Query(ctx, "SELECT id, house_id, flat_number, rooms, price FROM flats WHERE house_id = $1, moderation_status = 1", houseID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
-	var flats []entities.Flat
+	var flats []*entities.Flat
 	for rows.Next() {
 		var flat entities.Flat
 		err := rows.Scan(&flat.FlatID, &flat.HouseID, &flat.Number, &flat.RoomCount, &flat.Price)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+			return nil, err
 		}
-		flats = append(flats, flat)
+		flats = append(flats, &flat)
 	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows error: %w", err)
+	return flats, nil
+}
+func (r *PostgresRepo) GetFlatsByHouseIDMod(ctx context.Context, houseID entities.HouseID) ([]*entities.Flat, error) {
+	rows, err := r.db.Query(ctx, "SELECT id, house_id, flat_number, rooms, price FROM flats WHERE house_id = $1", houseID)
+	if err != nil {
+		return nil, err
 	}
+	defer rows.Close()
 
+	var flats []*entities.Flat
+	for rows.Next() {
+		var flat entities.Flat
+		err := rows.Scan(&flat.FlatID, &flat.HouseID, &flat.Number, &flat.RoomCount, &flat.Price)
+		if err != nil {
+			return nil, err
+		}
+		flats = append(flats, &flat)
+	}
 	return flats, nil
 }

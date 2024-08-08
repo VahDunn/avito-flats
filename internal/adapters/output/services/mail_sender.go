@@ -10,7 +10,7 @@ import (
 
 type Sender struct{}
 
-func New() *Sender {
+func NewSender() *Sender {
 	return &Sender{}
 }
 

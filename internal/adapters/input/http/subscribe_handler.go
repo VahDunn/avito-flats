@@ -2,61 +2,65 @@ package http
 
 import (
 	"avito-flats/internal/domain/entities"
+	"avito-flats/internal/domain/valueobjects"
 	"avito-flats/internal/usecases"
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
+
+	"github.com/google/uuid"
 )
 
-// HouseHandler отвечает за обработку запросов на создание дома.
 type SubscribeHandler struct {
-	SubcribeUsecase usecases.SubscribeUsecase
-}
-type SubscribeHouse struct {
-	houseid   entities.HouseID
-	user_id   int64
-	developer string
+	subscribeUsecase usecases.SubscribeUsecase
 }
 
-func NewSubscribeHandler(usecase usecases.HouseUsecase) HouseHandler {
-	return HouseHandler{HouseUsecase: usecase}
+type SubscribeHandlerIn struct {
+	houseid entities.HouseID `json:"house_id`
+	email   string           `json:"email`
 }
 
-// CreateHouse обрабатывает POST-запросы по пути /house/create
-func (h *HouseHandler) subscribeOnHouse(w http.ResponseWriter, r *http.Request) {
+func NewSubscribeHandler(subscribeUsecase usecases.SubscribeUsecase) *SubscribeHandler {
+	return &SubscribeHandler{subscribeUsecase: subscribeUsecase}
+}
+
+func (h *SubscribeHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
+	requestID := uuid.New().String()
+	userType := r.Context().Value("userType")
+
+	if userType != valueobjects.Moderator && userType != valueobjects.Client {
+		sendErrorResponse(w, "Unauthorized access", requestID, http.StatusUnauthorized)
+		return
+	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		sendErrorResponse(w, "Error reading request body", requestID, http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
-	var in CreateHouseIn
+	var in SubscribeHandlerIn
+
 	if err := json.Unmarshal(body, &in); err != nil {
-		http.Error(w, "Error unmarshalling JSON", http.StatusBadRequest)
-		return
-	}
-	buildyear, err := strconv.ParseInt(in.buildyear, 10, 64)
-	if err != nil {
-		http.Error(w, "Error parsing buildyear", http.StatusInternalServerError)
-	}
-	newHouse, err := h.HouseUsecase.CreateHouse(in.address, buildyear, in.developer)
-	if err != nil {
-		http.Error(w, "Error creating house", http.StatusInternalServerError)
+		sendErrorResponse(w, "Error unmarshalling JSON", requestID, http.StatusBadRequest)
 		return
 	}
 
-	// Сериализуем параметры дома в JSON
-	response, err := json.Marshal(newHouse)
-	if err != nil {
-		http.Error(w, "Error marshaling house", http.StatusInternalServerError)
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		sendErrorResponse(w, "Unauthorized access", requestID, http.StatusBadRequest)
 		return
 	}
 
-	// Настраиваем заголовки и отправляем ответ
-	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+}
+
+func (h *SubscribeHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
+	return
+	// Функция отписки не реализована. Подписка будет вечной.
 }

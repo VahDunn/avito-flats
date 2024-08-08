@@ -2,78 +2,92 @@ package http
 
 import (
 	"avito-flats/internal/domain/entities"
+	"avito-flats/internal/domain/valueobjects"
 	"avito-flats/internal/usecases"
 	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
 // HouseHandler отвечает за обработку запросов на создание дома.
-type NewFlatHandler struct {
+type CreateFlatHandler struct {
 	CreateFlatUsecase usecases.CreateFlatUsecase
 }
 type CreateFlatIn struct {
-	houseid   string
-	number    string
-	price     string
-	roomcount string
+	houseid   string `json:"house_id"`
+	number    string `json:"number"`
+	price     string `json:"price"`
+	roomcount string `json:"room_count"`
 }
 
-func CreateFlatHandler(usecase usecases.CreateFlatUsecase) NewFlatHandler {
-	return NewFlatHandler{CreateFlatUsecase: usecase}
+func NewFlatHandler(usecase usecases.CreateFlatUsecase) CreateFlatHandler {
+	return CreateFlatHandler{CreateFlatUsecase: usecase}
 }
 
 // createNewFlat обрабатывает POST-запросы по пути /flat/create
-func (n *NewFlatHandler) createNewFlat(w http.ResponseWriter, r *http.Request) {
+func (h *CreateFlatHandler) createNewFlat(w http.ResponseWriter, r *http.Request) {
+	requestID := uuid.New().String()
+	userType := r.Context().Value("userType")
+
+	if userType != valueobjects.Moderator && userType != valueobjects.Client {
+		sendErrorResponse(w, "Unauthorized access", requestID, http.StatusUnauthorized)
+		return
+	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		sendErrorResponse(w, "Error reading request body", requestID, http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
 	var in CreateFlatIn
 	if err := json.Unmarshal(body, &in); err != nil {
-		http.Error(w, "Error unmarshalling JSON", http.StatusBadRequest)
+		sendErrorResponse(w, "Error unmarshalling JSON", requestID, http.StatusBadRequest)
 		return
 	}
 
-	temp_houseid, err := strconv.ParseInt(in.houseid, 10, 64)
+	houseID, err := strconv.ParseInt(in.houseid, 10, 64)
 	if err != nil {
-		http.Error(w, "House id error", http.StatusInternalServerError)
+		sendErrorResponse(w, "Invalid house id", requestID, http.StatusBadRequest)
+		return
 	}
-	houseid := entities.HouseID(temp_houseid)
 
 	number, err := strconv.ParseInt(in.number, 10, 64)
 	if err != nil {
-		http.Error(w, "Flat number error", http.StatusInternalServerError)
+		sendErrorResponse(w, "Invalid flat number", requestID, http.StatusBadRequest)
+		return
 	}
+
 	price, err := strconv.ParseInt(in.price, 10, 64)
 	if err != nil {
-		http.Error(w, "Price error", http.StatusInternalServerError)
-	}
-	roomcount, err := strconv.ParseInt(in.roomcount, 10, 64)
-	if err != nil {
-		http.Error(w, "Room count error", http.StatusInternalServerError)
-	}
-
-	newFlat, err := n.CreateFlatUsecase.CreateNewFlat(houseid, number, price, roomcount)
-	if err != nil {
-		http.Error(w, "Error creating flat", http.StatusInternalServerError)
+		sendErrorResponse(w, "Invalid price", requestID, http.StatusBadRequest)
 		return
 	}
 
-	// Сериализуем параметры квартиры в JSON
+	roomCount, err := strconv.ParseInt(in.roomcount, 10, 64)
+	if err != nil {
+		sendErrorResponse(w, "Invalid room count", requestID, http.StatusBadRequest)
+		return
+	}
+
+	newFlat, err := h.CreateFlatUsecase.CreateNewFlat(entities.HouseID(houseID), number, price, roomCount)
+	if err != nil {
+		// Здесь можно добавить логирование ошибки
+		sendErrorResponse(w, "Error creating flat", requestID, http.StatusInternalServerError)
+		return
+	}
+
 	response, err := json.Marshal(newFlat)
 	if err != nil {
-		http.Error(w, "Error marshaling house", http.StatusInternalServerError)
+		sendErrorResponse(w, "Error marshaling flat", requestID, http.StatusInternalServerError)
 		return
 	}
 
-	// Настраиваем заголовки и отправляем ответ
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated) // Используем 201 Created для успешного создания ресурса
 	w.Write(response)
 }

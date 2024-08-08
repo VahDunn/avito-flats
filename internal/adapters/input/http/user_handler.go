@@ -1,22 +1,16 @@
 package http
 
 import (
-	"avito-flats/internal/usecases"
+	"avito-flats/internal/domain/valueobjects"
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
+	"fmt"
 	"net/http"
-	"time"
 )
 
-type UserHandler struct {
-	UserUsecase usecases.UserUsecase
-}
+type UserHandler struct{}
 
-var jwtKey = []byte("your_secret_key")
-
-type Claims struct {
-	UserType string `json:"user_type"`
-	jwt.StandardClaims
+func NewUserHandler() *UserHandler {
+	return &UserHandler{}
 }
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -28,38 +22,25 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) DummyLogin(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		UserType string `json:"user_type"`
-	}
 
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+	userType := r.URL.Query().Get("user_type")
 
-	if req.UserType != "client" && req.UserType != "moderator" {
+	fmt.Println(userType)
+	if userType != "client" && userType != "moderator" {
 		http.Error(w, "Invalid user type. Must be 'client' or 'moderator'", http.StatusBadRequest)
 		return
 	}
 
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &Claims{
-		UserType: req.UserType,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		},
+	var token valueobjects.UserType
+	if userType == "moderator" {
+		token = valueobjects.Moderator
 	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
-	if err != nil {
-		http.Error(w, "Could not generate token", http.StatusInternalServerError)
-		return
+	if userType == "client" {
+		token = valueobjects.Client
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"token": tokenString,
+	json.NewEncoder(w).Encode(map[string]int{
+		"token": int(token),
 	})
 }

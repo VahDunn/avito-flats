@@ -2,12 +2,12 @@ package http
 
 import (
 	"avito-flats/internal/domain/entities"
+	"avito-flats/internal/domain/valueobjects"
 	"avito-flats/internal/usecases"
 	"encoding/json"
+	"github.com/google/uuid"
 	"net/http"
 	"strconv"
-
-	"github.com/go-chi/chi"
 )
 
 // FlatsHandler отвечает за обработку запросов, связанных с квартирами.
@@ -22,26 +22,31 @@ func NewFlatsHandler(usecase usecases.FlatsUsecase) FlatsHandler {
 // getFlats обрабатывает GET-запросы по пути /house/{id}.
 func (h *FlatsHandler) getFlats(w http.ResponseWriter, r *http.Request) {
 	// Извлекаем ID из пути
-	idStr := chi.URLParam(r, "id")
+	requestID := uuid.New().String()
 
+	userType := r.Context().Value("userType")
+
+	if userType != valueobjects.Moderator && userType != valueobjects.Client {
+		sendErrorResponse(w, "Unauthorized access", requestID, http.StatusUnauthorized)
+		return
+	}
 	// Преобразуем ID из строки в целое число
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(requestID)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
 
 	// Вызываем usecase для получения списка квартир
-	flats, err := h.FlatsUsecase.GetFlatsByHouseID(entities.HouseID(id))
+	flats, err := h.FlatsUsecase.GetFlatsByHouseID(r.Context(), entities.HouseID(id))
 	if err != nil {
-		http.Error(w, "Error retrieving flats", http.StatusInternalServerError)
+		sendErrorResponse(w, "Error retrieving flats", requestID, http.StatusInternalServerError)
 		return
 	}
 
-	// Сериализуем список квартир в JSON
 	response, err := json.Marshal(flats)
 	if err != nil {
-		http.Error(w, "Error marshaling flats", http.StatusInternalServerError)
+		sendErrorResponse(w, "Error marshaling flat", requestID, http.StatusInternalServerError)
 		return
 	}
 
