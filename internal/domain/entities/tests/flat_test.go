@@ -25,7 +25,7 @@ func TestFlatCreation(t *testing.T) {
 	}
 
 	// Проверяем корректность создания объекта Flat
-	assert.Equal(t, 1, flat.FlatID)
+	assert.Equal(t, int64(1), flat.FlatID)
 	assert.Equal(t, houseID, flat.HouseID)
 	assert.Equal(t, number, flat.Number)
 	assert.Equal(t, price, flat.Price)

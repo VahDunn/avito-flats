@@ -1,3 +1,4 @@
+//go:generate mockgen -destination=./mocks/interfaces.go -package=${GOPACKAGE} -source=interfaces.go
 package flats
 
 import (
@@ -6,11 +7,13 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-type Repository interface {
-	GetFlatsByHouseID(ctx context.Context, houseID entities.HouseID) ([]*entities.Flat, error)
-	GetFlatsByHouseIDMod(ctx context.Context, houseID entities.HouseID) ([]*entities.Flat, error)
-}
+type (
+	Repository interface {
+		GetFlatsByHouseID(ctx context.Context, in entities.GetFlatsByHouseIDIn) ([]*entities.Flat, error)
+		GetFlatsByHouseIDMod(ctx context.Context, in entities.GetFlatsByHouseIDIn) ([]*entities.Flat, error)
+	}
 
-type Database interface {
-	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
-}
+	Database interface {
+		Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	}
+)

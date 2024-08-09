@@ -14,9 +14,6 @@ type PostgresRepo struct {
 	db *sql.DB
 }
 
-// Убедимся, что PostgresRepo удовлетворяет интерфейсу house.Repository.
-var _ Repository = &PostgresRepo{}
-
 // NewPostgresRepository создает новый репозиторий для работы с базой данных.
 func NewPostgresRepository(dataSourceName string) (*PostgresRepo, error) {
 	db, err := sql.Open("postgres", dataSourceName)

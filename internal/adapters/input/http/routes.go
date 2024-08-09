@@ -1,11 +1,11 @@
 package http
 
 import (
+	"avito-flats/internal/adapters/output/repositories/dummylogin"
 	"avito-flats/internal/adapters/output/repositories/flats"
 	"avito-flats/internal/adapters/output/repositories/flatupdate"
 	"avito-flats/internal/adapters/output/repositories/house"
 	"avito-flats/internal/adapters/output/repositories/newflat"
-	//"avito-flats/internal/adapters/output/repositories/subscribe"
 	"avito-flats/internal/domain/valueobjects"
 	"avito-flats/internal/usecases"
 	"context"
@@ -40,12 +40,9 @@ func NewRouter() *chi.Mux {
 	updFlatHandler := NewUpdateFlatStatusHandler(updFlatUsecase)
 	router.Post("/flat/{id}/update", updFlatHandler.updateFlatStatus)
 
-	//subscribeRepo := subscribe.PostgresRepo{}
-	//subscribeUsecase := usecases.SubscribeUsecase(&subscribeRepo)
-	//subscribeHandler := NewSubscribeHandler(subscribeUsecase)
-	//router.Post("/flat/{id}/update", subscribeHandler.Subscribe)
-
-	userHandler := NewUserHandler()
+	userRepo := dummylogin.PostgresRepo{}
+	userUsecase := usecases.NewUserUsecase(&userRepo)
+	userHandler := NewUserHandler(userUsecase)
 	router.Get("/dummyLogin", userHandler.DummyLogin)
 
 	return router
